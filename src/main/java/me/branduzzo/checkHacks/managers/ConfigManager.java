@@ -78,6 +78,14 @@ public class ConfigManager {
     public String getPrefix()    { return masterConfig.getString("prefix", "<yellow>[CheckHacks] <gray>"); }
     public String getLanguage()  { return masterConfig.getString("language", "en"); }
 
+    public int getAutoCheckQueueMaxConcurrent() {
+        return Math.max(1, masterConfig.getInt("auto-check-queue.max-concurrent", 2));
+    }
+
+    public int getAutoCheckQueueStartIntervalTicks() {
+        return Math.max(1, masterConfig.getInt("auto-check-queue.start-interval-ticks", 20));
+    }
+
     public boolean isDiscordEnabled()   { return masterConfig.getBoolean("discord.enabled", false); }
     public String  getWebhookUrl()      { return masterConfig.getString("discord.webhook-url", ""); }
     public int     getEmbedColor()      { return masterConfig.getInt("discord.embed-color", 16776960); }
@@ -85,11 +93,6 @@ public class ConfigManager {
 
     public boolean isBedrockEnabled()        { return masterConfig.getBoolean("bedrock.enabled", true); }
     public List<String> getBedrockPrefixes() { return masterConfig.getStringList("bedrock.prefixes"); }
-
-    public boolean isWebEditorEnabled() { return masterConfig.getBoolean("web-editor.enabled", true); }
-    public int     getWebPort()         { return masterConfig.getInt("web-editor.port", 8080); }
-    public String  getWebHost()         { return masterConfig.getString("web-editor.host", "localhost"); }
-    public int     getTokenExpireMinutes() { return masterConfig.getInt("web-editor.token-expire-minutes", 10); }
 
     public boolean isCommandIfPositiveEnabled() { return hacksConfig.getBoolean("command-if-positive.enabled", false); }
     public String  getPositiveCommand()         { return hacksConfig.getString("command-if-positive.command", ""); }

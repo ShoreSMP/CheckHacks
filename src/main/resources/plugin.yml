@@ -29,10 +29,6 @@ commands:
     description: Check the language of a player.
     usage: /checklang <player> [lang1,lang2,...]
     permission: checkhacks.checklang
-  cheditor:
-    description: Open the CheckHacks web editor.
-    usage: /cheditor
-    permission: checkhacks.editor
 
 permissions:
   checkhacks.check:
@@ -47,9 +43,6 @@ permissions:
   checkhacks.checklang:
     description: Use /checklang.
     default: op
-  checkhacks.editor:
-    description: Use /cheditor.
-    default: op
   checkhacks.*:
     description: All CheckHacks permissions.
     default: false
@@ -58,4 +51,3 @@ permissions:
       checkhacks.reload: true
       checkhacks.alerts: true
       checkhacks.checklang: true
-      checkhacks.editor: true

@@ -35,17 +35,40 @@ public class LangCheckManager {
     public Set<UUID> getFirstJoinChecked() { return firstJoinChecked; }
 
     public void startCheck(Player target, Player initiator, Map<String, String> languages) {
+        startCheck(target, initiator, languages, false);
+    }
+
+    public void startCheck(Player target, Player initiator,
+                           Map<String, String> languages, boolean autoCheck) {
+        if (!Bukkit.isPrimaryThread()) {
+            Map<String, String> languageCopy = new LinkedHashMap<>(languages);
+            Bukkit.getScheduler().runTask(plugin, () ->
+                    startCheck(target, initiator, languageCopy, autoCheck));
+            return;
+        }
+
+        if (autoCheck) {
+            queueAutoCheck(target, initiator, languages);
+            return;
+        }
+
+        plugin.getAutoCheckQueueManager().remove(autoQueueKey(target.getUniqueId()));
+        startCheckNow(target, initiator, languages, false);
+    }
+
+    private boolean startCheckNow(Player target, Player initiator,
+                                  Map<String, String> languages, boolean autoCheck) {
         UUID uuid = target.getUniqueId();
 
         if (activeChecks.containsKey(uuid)) {
             if (initiator != null)
                 initiator.sendMessage(plugin.getMessageManager().get("already-checking",
                         Map.of("player", target.getName())));
-            return;
+            return false;
         }
 
         LangCheckData data = new LangCheckData(uuid,
-                initiator != null ? initiator.getUniqueId() : null, languages);
+                initiator != null ? initiator.getUniqueId() : null, languages, autoCheck);
         activeChecks.put(uuid, data);
 
         if (initiator != null)
@@ -53,7 +76,10 @@ public class LangCheckManager {
                     Map.of("player", target.getName())));
 
         Location signLoc = SignUtil.findAirBlock(target);
-        if (signLoc == null) { activeChecks.remove(uuid); return; }
+        if (signLoc == null) {
+            activeChecks.remove(uuid);
+            return false;
+        }
 
         Block block = signLoc.getBlock();
         BlockState originalState = block.getState();
@@ -69,7 +95,7 @@ public class LangCheckManager {
             originalState.update(true, false);
             if (placedBarrier) belowBlock.setType(Material.AIR, false);
             activeChecks.remove(uuid);
-            return;
+            return false;
         }
 
         sign.getSide(Side.FRONT).line(0, Component.translatable(LANG_KEY, LANG_FALLBACK));
@@ -100,9 +126,34 @@ public class LangCheckManager {
                     Map.of("player", target.getName()));
             plugin.getMessageManager().broadcastAlerts(msg);
             notifyInitiator(data, msg);
+            if (data.isAutoCheck()) plugin.getAutoCheckQueueManager().releaseSlot(data.getTargetUUID());
         }, plugin.getConfigManager().getLangTimeoutTicks());
 
         data.setTimeoutTask(timeout);
+        return true;
+    }
+
+    private void queueAutoCheck(Player target, Player initiator, Map<String, String> languages) {
+        UUID uuid = target.getUniqueId();
+        String queueKey = autoQueueKey(uuid);
+
+        if (activeChecks.containsKey(uuid) || plugin.getAutoCheckQueueManager().isQueued(queueKey)) return;
+        if (languages.isEmpty()) return;
+
+        UUID initiatorUUID = initiator != null ? initiator.getUniqueId() : null;
+        Map<String, String> languageCopy = new LinkedHashMap<>(languages);
+        String targetName = target.getName();
+
+        plugin.getAutoCheckQueueManager().enqueue(queueKey, uuid, "language check for " + targetName, () -> {
+            Player queuedTarget = Bukkit.getPlayer(uuid);
+            if (queuedTarget == null || !queuedTarget.isOnline()) return false;
+            Player queuedInitiator = initiatorUUID != null ? Bukkit.getPlayer(initiatorUUID) : null;
+            return startCheckNow(queuedTarget, queuedInitiator, languageCopy, true);
+        });
+    }
+
+    private String autoQueueKey(UUID uuid) {
+        return "lang:" + uuid;
     }
 
     public void handleResponse(Player target, String[] lines) {
@@ -128,6 +179,7 @@ public class LangCheckManager {
                             .map(Player::getName).orElse("AutoCheck")
                             : "AutoCheck",
                     "Lang check", false);
+            if (data.isAutoCheck()) plugin.getAutoCheckQueueManager().releaseSlot(data.getTargetUUID());
             return;
         }
 
@@ -158,8 +210,9 @@ public class LangCheckManager {
                     .replace("&name&",    target.getName())
                     .replace("&checker&", checkerName)
                     .replace("&lang&",    detected != null ? detected : "Unknown (" + response + ")");
-            WebhookUtil.sendRaw(cfg.getLangWebhookUrl(), cfg.getLangEmbedColor(), description);
+            WebhookUtil.sendRaw(plugin, cfg.getLangWebhookUrl(), cfg.getLangEmbedColor(), description);
         }
+        if (data.isAutoCheck()) plugin.getAutoCheckQueueManager().releaseSlot(data.getTargetUUID());
     }
 
     private void notifyInitiator(LangCheckData data, Component msg) {
@@ -173,14 +226,17 @@ public class LangCheckManager {
     private void restoreSign(LangCheckData data) {
         Location loc = data.getSignLocation();
         if (loc == null) return;
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        Runnable restore = () -> {
             try { if (data.getOriginalState() != null) data.getOriginalState().update(true, false); }
             catch (Exception e) { plugin.getLogger().warning("[CheckHacks] LangRestore: " + e.getMessage()); }
             if (data.isBarrierPlaced() && data.getBarrierLocation() != null) {
                 try { data.getBarrierLocation().getBlock().setType(Material.AIR, false); }
                 catch (Exception e) { plugin.getLogger().warning("[CheckHacks] LangBarrier: " + e.getMessage()); }
             }
-        });
+        };
+        if (Bukkit.isPrimaryThread()) restore.run();
+        else Bukkit.getScheduler().runTask(plugin, restore);
+        data.setSignLocation(null);
     }
 
     public void cleanup() {

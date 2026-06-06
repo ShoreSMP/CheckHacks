@@ -68,6 +68,7 @@ public class AntiCheatListener implements Listener {
         if (player == null) return;
         if (!plugin.getCheckManager().canAutoCheck(player.getUniqueId())) return;
         if (plugin.getCheckManager().isChecking(player.getUniqueId())) return;
+        if (plugin.getCheckManager().isAutoCheckQueued(player.getUniqueId())) return;
 
         plugin.getLogger().info("[CheckHacks] " + acName + " flagged " + player.getName() + " — queuing check.");
         MessageUtil.broadcastAlerts(plugin,

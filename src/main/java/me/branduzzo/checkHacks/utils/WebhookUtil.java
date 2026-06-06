@@ -1,5 +1,8 @@
 package me.branduzzo.checkHacks.utils;
 
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
+
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -8,7 +11,7 @@ import java.time.Instant;
 
 public class WebhookUtil {
 
-    public static void sendResult(String webhookUrl, int color, String messageTemplate,
+    public static void sendResult(Plugin plugin, String webhookUrl, int color, String messageTemplate,
                                   String playerName, String checkerName, String reason,
                                   String hacksChecked, String resultText) {
         if (!isValid(webhookUrl)) return;
@@ -18,10 +21,10 @@ public class WebhookUtil {
                 .replace("&reason&",  reason)
                 .replace("&hacks&",   hacksChecked)
                 .replace("&results&", resultText);
-        sendRaw(webhookUrl, color, description);
+        sendRaw(plugin, webhookUrl, color, description);
     }
 
-    public static void sendRaw(String webhookUrl, int color, String description) {
+    public static void sendRaw(Plugin plugin, String webhookUrl, int color, String description) {
         if (!isValid(webhookUrl)) return;
         String json = "{\"embeds\":[{"
                 + "\"title\":\"CheckHacks Report\","
@@ -30,15 +33,16 @@ public class WebhookUtil {
                 + "\"footer\":{\"text\":\"CheckHacks - Sign Translation Exploit\"},"
                 + "\"timestamp\":\"" + Instant.now() + "\""
                 + "}]}";
-        sendJson(webhookUrl, json);
+        sendJson(plugin, webhookUrl, json);
     }
 
     private static boolean isValid(String url) {
         return url != null && !url.isBlank() && !url.contains("CHANGE_ME");
     }
 
-    private static void sendJson(String webhookUrl, String json) {
-        new Thread(() -> {
+    private static void sendJson(Plugin plugin, String webhookUrl, String json) {
+        if (plugin == null || !plugin.isEnabled()) return;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 HttpURLConnection conn =
                         (HttpURLConnection) URI.create(webhookUrl).toURL().openConnection();
@@ -58,7 +62,7 @@ public class WebhookUtil {
             } catch (Exception e) {
                 System.err.println("[CheckHacks] Webhook error: " + e.getMessage());
             }
-        }, "CheckHacks-Webhook").start();
+        });
     }
 
     private static String escapeJson(String s) {

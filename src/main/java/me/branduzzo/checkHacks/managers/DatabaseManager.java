@@ -65,14 +65,6 @@ public class DatabaseManager {
                     response TEXT,
                     FOREIGN KEY (scan_id) REFERENCES scans(id) ON DELETE CASCADE
                 )""");
-            s.execute("""
-                CREATE TABLE IF NOT EXISTS editor_tokens (
-                    token TEXT PRIMARY KEY,
-                    player_uuid TEXT NOT NULL,
-                    player_name TEXT NOT NULL,
-                    created_at INTEGER NOT NULL,
-                    expires_at INTEGER NOT NULL
-                )""");
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed to create tables: " + e.getMessage());
         }
@@ -260,57 +252,6 @@ public class DatabaseManager {
             plugin.getLogger().warning("deleteScan: " + e.getMessage());
             return false;
         }
-    }
-
-    public synchronized String saveToken(String playerUUID, String playerName, int expireMinutes) {
-        if (connection == null) return null;
-        String token = UUID.randomUUID().toString().replace("-", "");
-        long now     = System.currentTimeMillis();
-        long expires = now + (expireMinutes * 60_000L);
-        try {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "DELETE FROM editor_tokens WHERE player_uuid=?")) {
-                ps.setString(1, playerUUID);
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "DELETE FROM editor_tokens WHERE expires_at<?")) {
-                ps.setLong(1, now);
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO editor_tokens (token,player_uuid,player_name,created_at,expires_at) VALUES (?,?,?,?,?)")) {
-                ps.setString(1, token);
-                ps.setString(2, playerUUID);
-                ps.setString(3, playerName);
-                ps.setLong(4, now);
-                ps.setLong(5, expires);
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("saveToken: " + e.getMessage());
-        }
-        return token;
-    }
-
-    public synchronized Map<String, String> validateToken(String token) {
-        if (connection == null || token == null) return null;
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT player_uuid, player_name FROM editor_tokens WHERE token=? AND expires_at>?")) {
-            ps.setString(1, token);
-            ps.setLong(2, System.currentTimeMillis());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Map<String, String> info = new LinkedHashMap<>();
-                    info.put("player_uuid", rs.getString("player_uuid"));
-                    info.put("player_name", rs.getString("player_name"));
-                    return info;
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("validateToken: " + e.getMessage());
-        }
-        return null;
     }
 
     private Map<String, Object> rowToMap(ResultSet rs) throws SQLException {

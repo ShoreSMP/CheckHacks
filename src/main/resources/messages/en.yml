@@ -17,5 +17,3 @@ lang-check-unknown: "{prefix}<white>Language of <yellow>{player}<white>: <red>Un
 lang-check-protected: "{prefix}<white>Language of <yellow>{player}<white>: <yellow>PROTECTED"
 lang-check-timeout: "{prefix}<yellow>{player} <white>did not respond - language check failed."
 lang-join-check: "{prefix}<gray>Auto-checking language of <yellow>{player}<gray>..."
-editor-url: "{prefix}<white>Editor: <aqua><click:open_url:'{url}'>{url}</click>"
-editor-disabled: "{prefix}<red>Web editor is disabled in config.yml."

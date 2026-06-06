@@ -25,19 +25,10 @@ public class MessageManager {
     public void load() {
         String lang = plugin.getConfigManager().getLanguage();
         ensureFile("messages/en.yml");
-        ensureFile("messages/it.yml");
-        ensureFile("messages/br.yml");
-        ensureFile("messages/de.yml");
-        ensureFile("messages/es.yml");
-        ensureFile("messages/fr.yml");
-        ensureFile("messages/lolcat.yml");
-        ensureFile("messages/ru.yml");
-        ensureFile("messages/uwu.yml");
-        File file = new File(plugin.getDataFolder(), "messages/" + lang + ".yml");
-        if (!file.exists()) {
-            plugin.getLogger().warning("messages/" + lang + ".yml not found, falling back to en.yml");
-            file = new File(plugin.getDataFolder(), "messages/en.yml");
+        if (!lang.equalsIgnoreCase("en")) {
+            plugin.getLogger().warning("Only messages/en.yml is bundled, falling back to en.yml");
         }
+        File file = new File(plugin.getDataFolder(), "messages/en.yml");
         messages = YamlConfiguration.loadConfiguration(file);
     }
 

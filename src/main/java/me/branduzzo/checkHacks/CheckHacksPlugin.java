@@ -3,6 +3,7 @@ package me.branduzzo.checkHacks;
 import me.branduzzo.checkHacks.commands.*;
 import me.branduzzo.checkHacks.listeners.*;
 import me.branduzzo.checkHacks.managers.*;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashSet;
@@ -15,7 +16,7 @@ public class CheckHacksPlugin extends JavaPlugin {
     private ConfigManager     configManager;
     private MessageManager    messageManager;
     private DatabaseManager   databaseManager;
-    private WebServerManager  webServerManager;
+    private AutoCheckQueueManager autoCheckQueueManager;
     private CheckManager      checkManager;
     private LangCheckManager  langCheckManager;
     private ClientDataManager clientDataManager;
@@ -29,13 +30,10 @@ public class CheckHacksPlugin extends JavaPlugin {
         configManager     = new ConfigManager(this);
         messageManager    = new MessageManager(this);
         databaseManager   = new DatabaseManager(this);
+        autoCheckQueueManager = new AutoCheckQueueManager(this);
         clientDataManager = new ClientDataManager();
         checkManager      = new CheckManager(this);
         langCheckManager  = new LangCheckManager(this);
-
-        if (configManager.isWebEditorEnabled()) {
-            webServerManager = new WebServerManager(this);
-        }
 
         CheckHacksCommand checkCmd = new CheckHacksCommand(this);
         getCommand("checkhacks").setExecutor(checkCmd);
@@ -45,7 +43,6 @@ public class CheckHacksPlugin extends JavaPlugin {
         CheckLangCommand langCmd = new CheckLangCommand(this);
         getCommand("checklang").setExecutor(langCmd);
         getCommand("checklang").setTabCompleter(langCmd);
-        getCommand("cheditor").setExecutor(new EditorCommand(this));
 
         getServer().getPluginManager().registerEvents(new SignListener(this), this);
         getServer().getPluginManager().registerEvents(new JoinListener(this), this);
@@ -60,8 +57,11 @@ public class CheckHacksPlugin extends JavaPlugin {
     public void onDisable() {
         if (checkManager     != null) checkManager.cleanup();
         if (langCheckManager != null) langCheckManager.cleanup();
-        if (webServerManager != null) webServerManager.stop();
+        if (autoCheckQueueManager != null) autoCheckQueueManager.cleanup();
+        getServer().getScheduler().cancelTasks(this);
+        HandlerList.unregisterAll(this);
         if (databaseManager  != null) databaseManager.close();
+        instance = null;
         getLogger().info("CheckHacks disabled.");
     }
 
@@ -69,6 +69,7 @@ public class CheckHacksPlugin extends JavaPlugin {
     public ConfigManager     getConfigManager()     { return configManager; }
     public MessageManager    getMessageManager()    { return messageManager; }
     public DatabaseManager   getDatabaseManager()   { return databaseManager; }
+    public AutoCheckQueueManager getAutoCheckQueueManager() { return autoCheckQueueManager; }
     public CheckManager      getCheckManager()      { return checkManager; }
     public LangCheckManager  getLangCheckManager()  { return langCheckManager; }
     public ClientDataManager getClientDataManager() { return clientDataManager; }

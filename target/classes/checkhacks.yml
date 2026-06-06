@@ -104,7 +104,7 @@ default-check-hacks:
   - auto-clicker-mc
 
 auto-check-on-join:
-  enabled: false
+  enabled: true
   only-first-join: false
   hacks:
     - meteor-client
@@ -137,16 +137,16 @@ detect-flag:
     - baritone
 
 command-if-positive:
-  enabled: false
-  command: "tempban %player% 14d Cheating"
-
+  enabled: true
+  command: "ban %player% 3s Using Blacklisted Modifications: %check% -ip"
 command-if-protected:
   enabled: false
+  # Placeholders: %player%, %check%
   command: "tempban %player% 14d Cheating"
 
 command-if-clean:
   enabled: false
+  # Placeholders: %player%, %check%
   command: "give %player% diamond 1"
-
-timeout-ticks: 200
-between-sign-ticks: 20
+timeout-ticks: 100
+between-sign-ticks: 2

@@ -18,9 +18,9 @@ CheckHacks is an innovative server-side anticheat plugin that detects client-sid
 * `/chalerts` (aliases: `/checkalerts`, `/alerts`) - toggle hack detection alerts on/off per player
 * `/checklang <player>` - detect the language of a player's Minecraft client using signs
 * `/checklang <player> en_us,it_it` - check against specific languages only
-* `/cheditor` - open the web editor directly from in-game with a one-time token link
 * Auto-check on player join with configurable delay and optional **first-join-only** mode
 * Auto language check on player join with its own configurable **first-join-only** mode
+* Shared automatic check queue with configurable concurrency and start interval to protect busy servers during join waves
 * Anticheat integration: triggers automatic checks when **Grim**, **Vulcan** or **Spartan** flags a player
 * Configurable cooldown between automatic checks per player to avoid spam
 * Separate hack lists for **default checks**, **join checks** and **anticheat-triggered checks**
@@ -33,10 +33,8 @@ CheckHacks is an innovative server-side anticheat plugin that detects client-sid
 * Discord webhook for hack detection results and a separate one for language check results
 * Webhook placeholders: `&name&`, `&checker&`, `&reason&`, `&hacks&`, `&results&`, `&lang&`
 * **SQLite database** built-in - all scan results are saved automatically, no external setup needed
-* **Web editor** runs directly on your server - view all scans, browse players, run new checks and see lang results from a browser
-* Web editor uses time-limited tokens generated with `/cheditor`, no password needed
 * Configs are split by function: `config.yml` for global settings, `checkhacks.yml` for hack checks, `checklang.yml` for language checks
-* Plugin messages in separate language files (`messages/en.yml`, `it.yml`, `de.yml`, `es.yml`, `fr.yml`, `pt.yml`, `ru.yml`, `lolcat.yml`, `uwu.yml`) - switchable with a single config line
+* Plugin messages in `messages/en.yml`
 * Every message fully editable with **MiniMessage** formatting, configurable prefix and **PlaceholderAPI** support
 * Permissions: `checkhacks.check`, `checkhacks.reload`, `checkhacks.alerts`, `checkhacks.checklang`, `checkhacks.editor`, `checkhacks.*`
 

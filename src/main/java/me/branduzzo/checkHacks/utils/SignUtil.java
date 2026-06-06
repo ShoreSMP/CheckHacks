@@ -1,6 +1,7 @@
 package me.branduzzo.checkHacks.utils;
 
 import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -116,6 +117,19 @@ public class SignUtil {
 
     public static Location findAirBlock(Player player) {
         Location base = player.getLocation().clone();
+        BlockFace behind = player.getFacing().getOppositeFace();
+        int dx = behind.getModX();
+        int dz = behind.getModZ();
+
+        if (dx != 0 || dz != 0) {
+            for (int distance = 1; distance <= 3; distance++) {
+                for (int dy : new int[]{1, 0, 2}) {
+                    Location loc = base.clone().add(dx * distance, dy, dz * distance);
+                    if (loc.getBlock().getType().isAir()) return loc;
+                }
+            }
+        }
+
         for (int dy = 1; dy <= 5; dy++) {
             Location loc = base.clone().add(0, dy, 0);
             if (loc.getBlock().getType().isAir()) return loc;

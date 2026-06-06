@@ -33,6 +33,10 @@ public class CheckManager {
 
     public boolean isChecking(UUID uuid) { return activeChecks.containsKey(uuid); }
 
+    public boolean isAutoCheckQueued(UUID uuid) {
+        return plugin.getAutoCheckQueueManager().isQueued(autoQueueKey(uuid));
+    }
+
     public boolean canAutoCheck(UUID uuid) {
         long cooldownMs = plugin.getConfigManager().getFlagCooldownHours() * 3_600_000L;
         return System.currentTimeMillis() - lastAutoCheck.getOrDefault(uuid, 0L) >= cooldownMs;
@@ -40,14 +44,70 @@ public class CheckManager {
 
     public void startCheck(Player target, Player initiator,
                            List<HackDefinition> hacks, boolean autoCheck, String reason) {
+        if (!Bukkit.isPrimaryThread()) {
+            List<HackDefinition> hackCopy = List.copyOf(hacks);
+            Bukkit.getScheduler().runTask(plugin, () ->
+                    startCheck(target, initiator, hackCopy, autoCheck, reason));
+            return;
+        }
+
+        if (autoCheck) {
+            queueAutoCheck(target, initiator, hacks, reason);
+            return;
+        }
+
+        plugin.getAutoCheckQueueManager().remove(autoQueueKey(target.getUniqueId()));
+        startCheckNow(target, initiator, hacks, false, reason);
+    }
+
+    private boolean startCheckNow(Player target, Player initiator,
+                                  List<HackDefinition> hacks, boolean autoCheck, String reason) {
         UUID uuid = target.getUniqueId();
 
         if (activeChecks.containsKey(uuid)) {
             if (initiator != null)
                 initiator.sendMessage(plugin.getMessageManager().get("already-checking",
                         Map.of("player", target.getName())));
-            return;
+            return false;
         }
+
+        if (plugin.getConfigManager().isBedrockEnabled()) {
+            for (String prefix : plugin.getConfigManager().getBedrockPrefixes()) {
+                if (target.getName().startsWith(prefix)) {
+                    Component msg = plugin.getMessageManager().get("bedrock-skip",
+                            Map.of("player", target.getName()));
+                    if (initiator != null) initiator.sendMessage(msg);
+                    else plugin.getMessageManager().broadcastAlerts(msg);
+                    return false;
+                }
+            }
+        }
+
+        if (autoCheck) lastAutoCheck.put(uuid, System.currentTimeMillis());
+
+        List<List<HackDefinition>> batches = buildBatches(hacks);
+        if (batches.isEmpty()) return false;
+
+        CheckPlayerData data = new CheckPlayerData(uuid,
+                initiator != null ? initiator.getUniqueId() : null,
+                batches, autoCheck, reason);
+        activeChecks.put(uuid, data);
+
+        if (initiator != null)
+            initiator.sendMessage(plugin.getMessageManager().get("check-started",
+                    Map.of("player", target.getName())));
+
+        processBatch(target, data);
+        return true;
+    }
+
+    private void queueAutoCheck(Player target, Player initiator,
+                                List<HackDefinition> hacks, String reason) {
+        UUID uuid = target.getUniqueId();
+        String queueKey = autoQueueKey(uuid);
+
+        if (activeChecks.containsKey(uuid) || plugin.getAutoCheckQueueManager().isQueued(queueKey)) return;
+        if (hacks.isEmpty()) return;
 
         if (plugin.getConfigManager().isBedrockEnabled()) {
             for (String prefix : plugin.getConfigManager().getBedrockPrefixes()) {
@@ -61,21 +121,22 @@ public class CheckManager {
             }
         }
 
-        if (autoCheck) lastAutoCheck.put(uuid, System.currentTimeMillis());
+        lastAutoCheck.put(uuid, System.currentTimeMillis());
 
-        List<List<HackDefinition>> batches = buildBatches(hacks);
-        if (batches.isEmpty()) return;
+        UUID initiatorUUID = initiator != null ? initiator.getUniqueId() : null;
+        List<HackDefinition> hackCopy = List.copyOf(hacks);
+        String targetName = target.getName();
 
-        CheckPlayerData data = new CheckPlayerData(uuid,
-                initiator != null ? initiator.getUniqueId() : null,
-                batches, autoCheck, reason);
-        activeChecks.put(uuid, data);
+        plugin.getAutoCheckQueueManager().enqueue(queueKey, uuid, "hack check for " + targetName, () -> {
+            Player queuedTarget = Bukkit.getPlayer(uuid);
+            if (queuedTarget == null || !queuedTarget.isOnline()) return false;
+            Player queuedInitiator = initiatorUUID != null ? Bukkit.getPlayer(initiatorUUID) : null;
+            return startCheckNow(queuedTarget, queuedInitiator, hackCopy, true, reason);
+        });
+    }
 
-        if (initiator != null)
-            initiator.sendMessage(plugin.getMessageManager().get("check-started",
-                    Map.of("player", target.getName())));
-
-        processBatch(target, data);
+    private String autoQueueKey(UUID uuid) {
+        return "hack:" + uuid;
     }
 
     private List<List<HackDefinition>> buildBatches(List<HackDefinition> hacks) {
@@ -245,6 +306,8 @@ public class CheckManager {
                 : (data.isAutoCheck() ? "AutoCheck" : "Console");
 
         List<HackDefinition> allHacks = data.getBatches().stream().flatMap(List::stream).toList();
+        List<String> detectedChecks = new ArrayList<>();
+        List<String> protectedChecks = new ArrayList<>();
         boolean anyDetected  = false;
         boolean anyProtected = false;
         boolean allClean     = true;
@@ -256,8 +319,16 @@ public class CheckManager {
 
         for (HackDefinition hack : allHacks) {
             HackResult r = data.getResults().getOrDefault(hack.getId(), HackResult.SKIPPED);
-            if (r == HackResult.DETECTED)  { anyDetected = true;  allClean = false; }
-            if (r == HackResult.PROTECTED) { anyProtected = true; allClean = false; }
+            if (r == HackResult.DETECTED)  {
+                anyDetected = true;
+                allClean = false;
+                detectedChecks.add(hack.getDisplayName());
+            }
+            if (r == HackResult.PROTECTED) {
+                anyProtected = true;
+                allClean = false;
+                protectedChecks.add(hack.getDisplayName());
+            }
             if (r == HackResult.SKIPPED)     allClean = false;
             resultText.append(hack.getDisplayName()).append(": ").append(r.name()).append("\n");
 
@@ -287,24 +358,44 @@ public class CheckManager {
             String hacksChecked = allHacks.stream()
                     .map(HackDefinition::getDisplayName)
                     .reduce((a, b) -> a + ", " + b).orElse("none");
-            WebhookUtil.sendResult(cfg.getWebhookUrl(), cfg.getEmbedColor(),
+            WebhookUtil.sendResult(plugin, cfg.getWebhookUrl(), cfg.getEmbedColor(),
                     cfg.getDiscordMessage(), targetName, checkerName,
                     data.getReason(), hacksChecked, resultText.toString().trim());
         }
 
         final String tn = targetName;
         if (anyDetected && cfg.isCommandIfPositiveEnabled()) {
-            String cmd = cfg.getPositiveCommand().replace("%player%", tn);
+            String cmd = applyCommandPlaceholders(cfg.getPositiveCommand(), tn, detectedChecks);
             Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd));
         }
         if (anyProtected && !anyDetected && cfg.isCommandIfProtectedEnabled()) {
-            String cmd = cfg.getProtectedCommand().replace("%player%", tn);
+            String cmd = applyCommandPlaceholders(cfg.getProtectedCommand(), tn, protectedChecks);
             Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd));
         }
         if (allClean && cfg.isCommandIfCleanEnabled()) {
-            String cmd = cfg.getCleanCommand().replace("%player%", tn);
+            String cmd = applyCommandPlaceholders(cfg.getCleanCommand(), tn,
+                    allHacks.stream().map(HackDefinition::getDisplayName).toList());
             Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd));
         }
+        if (data.isAutoCheck()) plugin.getAutoCheckQueueManager().releaseSlot(data.getTargetUUID());
+    }
+
+    private String applyCommandPlaceholders(String command, String playerName, List<String> checks) {
+        return command
+                .replace("%player%", playerName)
+                .replace("%check%", formatCheckList(checks));
+    }
+
+    private String formatCheckList(List<String> checks) {
+        if (checks == null || checks.isEmpty()) return "none";
+        if (checks.size() == 1) return checks.getFirst();
+        if (checks.size() == 2) return checks.get(0) + ", and " + checks.get(1);
+
+        StringJoiner joiner = new StringJoiner(", ");
+        for (int i = 0; i < checks.size() - 1; i++) {
+            joiner.add(checks.get(i));
+        }
+        return joiner + ", and " + checks.getLast();
     }
 
     private void notifyInitiator(CheckPlayerData data, Component msg) {
@@ -318,14 +409,16 @@ public class CheckManager {
     private void restoreCurrentSign(CheckPlayerData data) {
         Location loc = data.getSignLocation();
         if (loc == null) return;
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        Runnable restore = () -> {
             try { if (data.getOriginalState() != null) data.getOriginalState().update(true, false); }
             catch (Exception e) { plugin.getLogger().warning("[CheckHacks] Restore: " + e.getMessage()); }
             if (data.isBarrierPlaced() && data.getBarrierLocation() != null) {
                 try { data.getBarrierLocation().getBlock().setType(Material.AIR, false); }
                 catch (Exception e) { plugin.getLogger().warning("[CheckHacks] Barrier: " + e.getMessage()); }
             }
-        });
+        };
+        if (Bukkit.isPrimaryThread()) restore.run();
+        else Bukkit.getScheduler().runTask(plugin, restore);
         data.setSignLocation(null);
     }
 

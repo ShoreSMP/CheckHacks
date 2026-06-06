@@ -70,7 +70,7 @@ public class JoinListener implements Listener {
                     if (langs.isEmpty()) return;
                     plugin.getMessageManager().broadcastAlerts(
                             plugin.getMessageManager().get("lang-join-check", Map.of("player", player.getName())));
-                    plugin.getLangCheckManager().startCheck(player, null, langs);
+                    plugin.getLangCheckManager().startCheck(player, null, langs, true);
                 }, 80L);
             }
         }

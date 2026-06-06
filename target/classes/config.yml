@@ -7,11 +7,11 @@
 prefix: "<yellow>[CheckHacks] <gray>"
 language: "en"
 
-web-editor:
-  enabled: true
-  port: 8080
-  host: "localhost"
-  token-expire-minutes: 10
+auto-check-queue:
+  # Limits automatic hack/lang checks from join and anticheat triggers.
+  # Manual /checkhacks and /checklang commands bypass this queue.
+  max-concurrent: 2
+  start-interval-ticks: 20
 
 discord:
   enabled: false
@@ -26,4 +26,4 @@ bedrock:
     - "*"
 
 alerts:
-  default-enabled: true
+  default-enabled: false
