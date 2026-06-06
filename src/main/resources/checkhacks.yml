@@ -84,6 +84,11 @@ hacks:
     key: "key.auto-clicker_.toggle"
     mode: KEYBIND
 
+  mouse-tweaks:
+    display-name: "Mouse Tweaks"
+    key: "mousetweaks.title"
+    mode: TRANSLATE
+
 default-check-hacks:
   - meteor-client
   - liquidbounce
@@ -102,6 +107,7 @@ default-check-hacks:
   - autoclicker-fabric
   - antiafk
   - auto-clicker-mc
+  - mouse-tweaks
 
 auto-check-on-join:
   enabled: true
@@ -116,6 +122,7 @@ auto-check-on-join:
     - world-downloader
     - autoclicker-fabric
     - antiafk
+    - mouse-tweaks
 
 detect-flag:
   enabled: false
@@ -134,6 +141,7 @@ detect-flag:
     - world-downloader
     - autoclicker-fabric
     - antiafk
+    - mouse-tweaks
     - baritone
 
 command-if-positive:
@@ -149,4 +157,4 @@ command-if-clean:
   # Placeholders: %player%, %check%
   command: "give %player% diamond 1"
 timeout-ticks: 100
-between-sign-ticks: 2
+between-sign-ticks: 1

@@ -6,6 +6,7 @@
 
 prefix: "<yellow>[CheckHacks] <gray>"
 language: "en"
+debug-logging: false
 
 auto-check-queue:
   # Limits automatic hack/lang checks from join and anticheat triggers.
@@ -27,3 +28,4 @@ bedrock:
 
 alerts:
   default-enabled: false
+  console-enabled: false

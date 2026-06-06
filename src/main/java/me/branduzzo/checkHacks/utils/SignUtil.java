@@ -115,6 +115,27 @@ public class SignUtil {
         }
     }
 
+    public static boolean isAirLike(org.bukkit.block.Block block) {
+        org.bukkit.Material type = block.getType();
+        if (type.isAir()) return true;
+        String name = type.name();
+        return name.equals("LIGHT") 
+            || name.equals("SNOW")
+            || name.contains("GRASS") 
+            || name.contains("FERN") 
+            || name.contains("TULIP") 
+            || name.contains("DANDELION") 
+            || name.contains("POPPY") 
+            || name.contains("ORCHID") 
+            || name.contains("ALLIUM") 
+            || name.contains("DAISY") 
+            || name.contains("CORNFLOWER") 
+            || name.contains("ROSE") 
+            || name.contains("SUNFLOWER") 
+            || name.contains("LILAC") 
+            || name.contains("PEONY");
+    }
+
     public static Location findAirBlock(Player player) {
         Location base = player.getLocation().clone();
         BlockFace behind = player.getFacing().getOppositeFace();
@@ -125,14 +146,14 @@ public class SignUtil {
             for (int distance = 1; distance <= 3; distance++) {
                 for (int dy : new int[]{1, 0, 2}) {
                     Location loc = base.clone().add(dx * distance, dy, dz * distance);
-                    if (loc.getBlock().getType().isAir()) return loc;
+                    if (isAirLike(loc.getBlock())) return loc;
                 }
             }
         }
 
         for (int dy = 1; dy <= 5; dy++) {
             Location loc = base.clone().add(0, dy, 0);
-            if (loc.getBlock().getType().isAir()) return loc;
+            if (isAirLike(loc.getBlock())) return loc;
         }
         int[][] offsets = {
                 {1,1,0},{-1,1,0},{0,1,1},{0,1,-1},
@@ -141,7 +162,7 @@ public class SignUtil {
         };
         for (int[] off : offsets) {
             Location loc = base.clone().add(off[0], off[1], off[2]);
-            if (loc.getBlock().getType().isAir()) return loc;
+            if (isAirLike(loc.getBlock())) return loc;
         }
         return null;
     }
