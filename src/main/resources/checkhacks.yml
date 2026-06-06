@@ -14,11 +14,6 @@ hacks:
     key: "key.freecam.toggle"
     mode: KEYBIND
 
-  wurst:
-    display-name: "Wurst Client (-1.21)"
-    key: "key.wurst.zoom"
-    mode: KEYBIND
-
   xray-fabric:
     display-name: "XRay (Fabric)"
     key: "xray.config.toggle"
@@ -93,7 +88,6 @@ default-check-hacks:
   - meteor-client
   - liquidbounce
   - freecam
-  - wurst
   - xray-fabric
   - chestesp
   - killaura-fabric
@@ -116,7 +110,6 @@ auto-check-on-join:
     - meteor-client
     - liquidbounce
     - freecam
-    - wurst
     - bleachhack
     - aristois
     - world-downloader
