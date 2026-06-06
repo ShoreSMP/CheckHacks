@@ -138,7 +138,7 @@ detect-flag:
 
 command-if-positive:
   enabled: true
-  command: "ban %player% 3s Using Blacklisted Modifications: %check% -ip"
+  command: "ban %player% 3s Using Blacklisted Modification(s): %check% -ip"
 command-if-protected:
   enabled: false
   # Placeholders: %player%, %check%
