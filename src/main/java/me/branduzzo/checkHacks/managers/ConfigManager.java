@@ -77,6 +77,8 @@ public class ConfigManager {
 
     public String getPrefix()    { return masterConfig.getString("prefix", "<yellow>[CheckHacks] <gray>"); }
     public String getLanguage()  { return masterConfig.getString("language", "en"); }
+    public boolean isDebugLoggingEnabled() { return masterConfig.getBoolean("debug-logging", false); }
+    public boolean isConsoleAlertsEnabled() { return masterConfig.getBoolean("alerts.console-enabled", false); }
 
     public int getAutoCheckQueueMaxConcurrent() {
         return Math.max(1, masterConfig.getInt("auto-check-queue.max-concurrent", 2));

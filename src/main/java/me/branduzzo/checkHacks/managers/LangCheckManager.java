@@ -165,7 +165,10 @@ public class LangCheckManager {
         restoreSign(data);
 
         String response = lines.length > 0 ? lines[0].strip() : "";
-        plugin.getLogger().info("[CheckHacks] LangCheck response from " + target.getName() + ": '" + response + "'");
+        if (plugin.getConfigManager().isDebugLoggingEnabled()) {
+            plugin.getLogger().info("[CheckHacks] LangCheck response from "
+                    + target.getName() + ": '" + response + "'");
+        }
 
         if (response.isEmpty() || response.equals(LANG_FALLBACK)) {
             Component msg = plugin.getMessageManager().get("lang-check-protected",

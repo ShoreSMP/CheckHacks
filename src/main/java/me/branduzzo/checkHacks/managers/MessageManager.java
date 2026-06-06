@@ -61,7 +61,8 @@ public class MessageManager {
         for (Player p : Bukkit.getOnlinePlayers())
             if (p.hasPermission("checkhacks.alerts") && plugin.hasAlertsEnabled(p.getUniqueId()))
                 p.sendMessage(msg);
-        Bukkit.getConsoleSender().sendMessage(msg);
+        if (plugin.getConfigManager().isConsoleAlertsEnabled())
+            Bukkit.getConsoleSender().sendMessage(msg);
     }
 
     private String applyPapi(Player player, String text) {

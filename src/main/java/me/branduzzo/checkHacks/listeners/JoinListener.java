@@ -38,8 +38,10 @@ public class JoinListener implements Listener {
             Set<String> channels = player.getListeningPluginChannels();
             ClientType type = detectClientType(channels);
             plugin.getClientDataManager().setClientType(uuid, type);
-            plugin.getLogger().info("[CheckHacks] " + player.getName() + " client type: " + type
-                    + " channels=" + channels);
+            if (plugin.getConfigManager().isDebugLoggingEnabled()) {
+                plugin.getLogger().info("[CheckHacks] " + player.getName() + " client type: " + type
+                        + " channels=" + channels);
+            }
         }, 5L);
     }
 

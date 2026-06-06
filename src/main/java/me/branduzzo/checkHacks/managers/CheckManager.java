@@ -229,13 +229,15 @@ public class CheckManager {
 
         boolean exploitPreventer = ctrlResp.equalsIgnoreCase(CTRL_KEYBIND);
 
-        plugin.getLogger().info("[CheckHacks] Batch " + data.getCurrentBatch()
-                + " from " + target.getName()
-                + " L0='" + (lines.length > 0 ? lines[0] : "")
-                + "' L1='" + (lines.length > 1 ? lines[1] : "")
-                + "' L2='" + (lines.length > 2 ? lines[2] : "")
-                + "' CTRL='" + ctrlResp + "'"
-                + (exploitPreventer ? " [ExploitPreventer DETECTED]" : ""));
+        if (plugin.getConfigManager().isDebugLoggingEnabled()) {
+            plugin.getLogger().info("[CheckHacks] Batch " + data.getCurrentBatch()
+                    + " from " + target.getName()
+                    + " L0='" + (lines.length > 0 ? lines[0] : "")
+                    + "' L1='" + (lines.length > 1 ? lines[1] : "")
+                    + "' L2='" + (lines.length > 2 ? lines[2] : "")
+                    + "' CTRL='" + ctrlResp + "'"
+                    + (exploitPreventer ? " [ExploitPreventer DETECTED]" : ""));
+        }
 
         if (exploitPreventer) {
             Component epMsg = plugin.getMessageManager().get("exploitpreventer-detected",
@@ -249,8 +251,10 @@ public class CheckManager {
             String resp = i < lines.length ? lines[i].strip() : "";
             HackResult result = evaluateResponse(hack, resp, exploitPreventer);
             data.getResults().put(hack.getId(), result);
-            plugin.getLogger().info("[CheckHacks] " + hack.getDisplayName()
-                    + " -> " + result + " (resp='" + resp + "')");
+            if (plugin.getConfigManager().isDebugLoggingEnabled()) {
+                plugin.getLogger().info("[CheckHacks] " + hack.getDisplayName()
+                        + " -> " + result + " (resp='" + resp + "')");
+            }
         }
 
         data.incrementBatch();
