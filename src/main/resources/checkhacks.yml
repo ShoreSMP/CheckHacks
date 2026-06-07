@@ -84,6 +84,16 @@ hacks:
     key: "mousetweaks.title"
     mode: TRANSLATE
 
+  xaeros-minimap:
+    display-name: "Xaero's Minimap"
+    key: "gui.xaero_minimap"
+    mode: TRANSLATE
+
+  tweakeroo:
+    display-name: "Tweakeroo"
+    key: "tweakeroo.gui.title.configs"
+    mode: TRANSLATE
+
 default-check-hacks:
   - meteor-client
   - liquidbounce
@@ -102,6 +112,8 @@ default-check-hacks:
   - antiafk
   - auto-clicker-mc
   - mouse-tweaks
+  - xaeros-minimap
+  - tweakeroo
 
 auto-check-on-join:
   enabled: true
@@ -116,6 +128,8 @@ auto-check-on-join:
     - autoclicker-fabric
     - antiafk
     - mouse-tweaks
+    - xaeros-minimap
+    - tweakeroo
 
 detect-flag:
   enabled: false
@@ -128,13 +142,14 @@ detect-flag:
     - meteor-client
     - liquidbounce
     - freecam
-    - wurst
     - bleachhack
     - aristois
     - world-downloader
     - autoclicker-fabric
     - antiafk
     - mouse-tweaks
+    - xaeros-minimap
+    - tweakeroo
     - baritone
 
 command-if-positive:
