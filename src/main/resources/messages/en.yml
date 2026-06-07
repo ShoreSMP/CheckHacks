@@ -9,6 +9,7 @@ anticheat-trigger: "{prefix}<gray>Anticheat flagged <yellow>{player}<gray>. Queu
 join-check: "{prefix}<gray>Auto-checking <yellow>{player} <gray>on join..."
 invalid-hack: "{prefix}<red>Unknown hack: <white>{hack}"
 bedrock-skip: "{prefix}<yellow>{player} <gray>is a Bedrock player - check skipped."
+bypass-skip: "{prefix}<yellow>{player} <gray>has bypass permission - check skipped."
 alerts-enabled: "{prefix}<green>Alerts enabled."
 alerts-disabled: "{prefix}<red>Alerts disabled."
 lang-check-started: "{prefix}<white>Checking language of <yellow>{player}<white>..."

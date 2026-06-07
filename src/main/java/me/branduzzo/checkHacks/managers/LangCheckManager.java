@@ -22,6 +22,7 @@ public class LangCheckManager {
 
     private static final String LANG_KEY      = "key.forward";
     private static final String LANG_FALLBACK = "\u27e6LANG_UNKNOWN\u27e7";
+    private static final String BYPASS_PERMISSION = "checkhacks.bypass";
 
     private final CheckHacksPlugin plugin;
     private final Map<UUID, LangCheckData> activeChecks     = new ConcurrentHashMap<>();
@@ -59,6 +60,8 @@ public class LangCheckManager {
     private boolean startCheckNow(Player target, Player initiator,
                                   Map<String, String> languages, boolean autoCheck) {
         UUID uuid = target.getUniqueId();
+
+        if (hasBypass(target, initiator, autoCheck)) return false;
 
         if (activeChecks.containsKey(uuid)) {
             if (initiator != null)
@@ -137,6 +140,7 @@ public class LangCheckManager {
         UUID uuid = target.getUniqueId();
         String queueKey = autoQueueKey(uuid);
 
+        if (hasBypass(target, initiator, true)) return;
         if (activeChecks.containsKey(uuid) || plugin.getAutoCheckQueueManager().isQueued(queueKey)) return;
         if (languages.isEmpty()) return;
 
@@ -154,6 +158,15 @@ public class LangCheckManager {
 
     private String autoQueueKey(UUID uuid) {
         return "lang:" + uuid;
+    }
+
+    private boolean hasBypass(Player target, Player initiator, boolean autoCheck) {
+        if (!target.hasPermission(BYPASS_PERMISSION)) return false;
+        if (!autoCheck && initiator != null) {
+            initiator.sendMessage(plugin.getMessageManager().get("bypass-skip",
+                    Map.of("player", target.getName())));
+        }
+        return true;
     }
 
     public void handleResponse(Player target, String[] lines) {

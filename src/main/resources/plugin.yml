@@ -43,6 +43,9 @@ permissions:
   checkhacks.checklang:
     description: Use /checklang.
     default: op
+  checkhacks.bypass:
+    description: Bypass hack and language checks.
+    default: op
   checkhacks.*:
     description: All CheckHacks permissions.
     default: false
@@ -51,3 +54,4 @@ permissions:
       checkhacks.reload: true
       checkhacks.alerts: true
       checkhacks.checklang: true
+      checkhacks.bypass: true

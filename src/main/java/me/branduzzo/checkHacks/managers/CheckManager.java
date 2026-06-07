@@ -22,6 +22,7 @@ public class CheckManager {
 
     private static final String CTRL_KEYBIND  = "key.forward";
     private static final int    LINES_PER_SIGN = 3;
+    private static final String BYPASS_PERMISSION = "checkhacks.bypass";
 
     private final CheckHacksPlugin plugin;
     private final Map<UUID, CheckPlayerData> activeChecks  = new ConcurrentHashMap<>();
@@ -63,6 +64,8 @@ public class CheckManager {
     private boolean startCheckNow(Player target, Player initiator,
                                   List<HackDefinition> hacks, boolean autoCheck, String reason) {
         UUID uuid = target.getUniqueId();
+
+        if (hasBypass(target, initiator, autoCheck)) return false;
 
         if (activeChecks.containsKey(uuid)) {
             if (initiator != null)
@@ -106,6 +109,7 @@ public class CheckManager {
         UUID uuid = target.getUniqueId();
         String queueKey = autoQueueKey(uuid);
 
+        if (hasBypass(target, initiator, true)) return;
         if (activeChecks.containsKey(uuid) || plugin.getAutoCheckQueueManager().isQueued(queueKey)) return;
         if (hacks.isEmpty()) return;
 
@@ -137,6 +141,15 @@ public class CheckManager {
 
     private String autoQueueKey(UUID uuid) {
         return "hack:" + uuid;
+    }
+
+    private boolean hasBypass(Player target, Player initiator, boolean autoCheck) {
+        if (!target.hasPermission(BYPASS_PERMISSION)) return false;
+        if (!autoCheck && initiator != null) {
+            initiator.sendMessage(plugin.getMessageManager().get("bypass-skip",
+                    Map.of("player", target.getName())));
+        }
+        return true;
     }
 
     private List<List<HackDefinition>> buildBatches(List<HackDefinition> hacks) {
