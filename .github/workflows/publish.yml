@@ -1,0 +1,9 @@
+name: Publish Plugin
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  publish:
+    uses: ShoreSMP/shoresmp-conventions/.github/workflows/reusable-publish.yml@main
+    secrets: inherit
