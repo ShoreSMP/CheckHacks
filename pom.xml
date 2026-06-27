@@ -14,6 +14,10 @@
     </properties>
     <repositories>
         <repository>
+            <id>reposilite</id>
+            <url>https://repo.shoresmp.net/private</url>
+        </repository>
+        <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
