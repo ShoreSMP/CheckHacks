@@ -1,7 +1,7 @@
 name: CheckHacks
-version: 1.2.0
+version: '${version}'
 main: me.branduzzo.checkHacks.CheckHacksPlugin
-api-version: '1.21'
+api-version: '${version}'
 description: Detects client-side hacks and mods via the Sign Translation Vulnerability.
 authors: [branduzzo]
 
